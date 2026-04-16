@@ -1,6 +1,15 @@
 @EpiDash.Api_HostAddress = http://localhost:5156
 
-GET {{EpiDash.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Inject a new record into the database
+POST {{EpiDash.Api_HostAddress}}/api/AirQuality
+Content-Type: application/json
 
-###
+{
+  "locationName": "Downtown Edmonton",
+  "airQualityIndex": 45.5,
+  "pm25Level": 12.2,
+  "recordDate": "2026-04-16T12:00:00.000Z"
+}
+
+### Get all records from the database
+GET {{EpiDash.Api_HostAddress}}/api/AirQuality
