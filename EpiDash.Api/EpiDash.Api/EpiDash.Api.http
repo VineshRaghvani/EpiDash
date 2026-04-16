@@ -1,0 +1,6 @@
+@EpiDash.Api_HostAddress = http://localhost:5156
+
+GET {{EpiDash.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
