@@ -33,6 +33,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   List<dynamic> _airQualityRecords = [];
   bool _isLoading = true;
+  String _selectedCity = 'edmonton'; // NEW: Track the active city
 
   @override
   void initState() {
@@ -43,8 +44,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
     
-    // The URLs for your two endpoints
-    final syncUrl = Uri.parse('http://10.0.2.2:5156/api/AirQuality/sync'); 
+    // NEW: Inject the selected city directly into the sync URL
+    final syncUrl = Uri.parse('http://10.0.2.2:5156/api/AirQuality/sync/$_selectedCity'); 
     final fetchUrl = Uri.parse('http://10.0.2.2:5156/api/AirQuality'); 
     
     try {
@@ -77,35 +78,82 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text('EpiDash Live Feed', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _airQualityRecords.isEmpty
-              ? const Center(child: Text('No data found in database.'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _airQualityRecords.length,
-                  itemBuilder: (context, index) {
-                    final record = _airQualityRecords[index];
-                    return Card(
-                      elevation: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: ListTile(
-                        leading: const Icon(Icons.air, color: Colors.teal, size: 36),
-                        title: Text(record['locationName'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('AQI: ${record['airQualityIndex']} | PM2.5: ${record['pm25Level']}'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DetailsScreen(record: record),
-                              ),
+      body: Column(
+        children: [
+          // NEW: The City Selection Row
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ChoiceChip(
+                  label: const Text('Edmonton'),
+                  selected: _selectedCity == 'edmonton',
+                  onSelected: (bool selected) {
+                    if (selected) {
+                      setState(() => _selectedCity = 'edmonton');
+                      _fetchData();
+                    }
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Calgary'),
+                  selected: _selectedCity == 'calgary',
+                  onSelected: (bool selected) {
+                    if (selected) {
+                      setState(() => _selectedCity = 'calgary');
+                      _fetchData();
+                    }
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Vancouver'),
+                  selected: _selectedCity == 'vancouver',
+                  onSelected: (bool selected) {
+                    if (selected) {
+                      setState(() => _selectedCity = 'vancouver');
+                      _fetchData();
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          
+          // Existing List Code wrapped in Expanded to prevent layout overflow
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _airQualityRecords.isEmpty
+                    ? const Center(child: Text('No data found in database.'))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _airQualityRecords.length,
+                        itemBuilder: (context, index) {
+                          final record = _airQualityRecords[index];
+                          return Card(
+                            elevation: 4,
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: ListTile(
+                              leading: const Icon(Icons.air, color: Colors.teal, size: 36),
+                              title: Text(record['locationName'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text('AQI: ${record['airQualityIndex']} | PM2.5: ${record['pm25Level']}'),
+                              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => DetailsScreen(record: record),
+                                  ),
+                                );
+                              },
+                            ),
                           );
                         },
                       ),
-                    );
-                  },
-                ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _fetchData,
         child: const Icon(Icons.refresh),
