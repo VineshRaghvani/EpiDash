@@ -13,3 +13,6 @@ Content-Type: application/json
 
 ### Get all records from the database
 GET {{EpiDash.Api_HostAddress}}/api/AirQuality
+
+### Fetch Live Data from Open-Meteo and Save to DB
+POST http://localhost:5156/api/AirQuality/sync

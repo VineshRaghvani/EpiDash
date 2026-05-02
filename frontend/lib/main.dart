@@ -33,7 +33,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   List<dynamic> _airQualityRecords = [];
   bool _isLoading = true;
-  String _selectedCity = 'edmonton'; // NEW: Track the active city
+  String _selectedCity = 'edmonton';
 
   @override
   void initState() {
@@ -44,7 +44,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
     
-    // NEW: Inject the selected city directly into the sync URL
+    // Inject the selected city directly into the sync URL
     final syncUrl = Uri.parse('http://10.0.2.2:5156/api/AirQuality/sync/$_selectedCity'); 
     final fetchUrl = Uri.parse('http://10.0.2.2:5156/api/AirQuality'); 
     
@@ -57,7 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (response.statusCode == 200) {
         setState(() {
-          // Decode the data and reverse it so the newest syncs appear at the top!
+          // Decode the data and reverse it so the newest syncs appear at the top
           _airQualityRecords = json.decode(response.body);
           _airQualityRecords = _airQualityRecords.reversed.toList();
           _isLoading = false;
@@ -80,7 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Column(
         children: [
-          // NEW: The City Selection Row
+          // The City Selection Row
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(
@@ -120,43 +120,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           
-          // Existing List Code wrapped in Expanded to prevent layout overflow
+          // The Pull-to-Refresh List
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _airQualityRecords.isEmpty
                     ? const Center(child: Text('No data found in database.'))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _airQualityRecords.length,
-                        itemBuilder: (context, index) {
-                          final record = _airQualityRecords[index];
-                          return Card(
-                            elevation: 4,
-                            margin: const EdgeInsets.only(bottom: 16),
-                            child: ListTile(
-                              leading: const Icon(Icons.air, color: Colors.teal, size: 36),
-                              title: Text(record['locationName'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text('AQI: ${record['airQualityIndex']} | PM2.5: ${record['pm25Level']}'),
-                              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => DetailsScreen(record: record),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
+                    : RefreshIndicator(
+                        onRefresh: _fetchData, 
+                        color: Colors.teal,
+                        child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(), // Ensures pull-to-refresh works even if the list is small
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _airQualityRecords.length,
+                          itemBuilder: (context, index) {
+                            final record = _airQualityRecords[index];
+                            return Card(
+                              elevation: 4,
+                              margin: const EdgeInsets.only(bottom: 16),
+                              child: ListTile(
+                                leading: const Icon(Icons.air, color: Colors.teal, size: 36),
+                                title: Text(record['locationName'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: Text('AQI: ${record['airQualityIndex']} | PM2.5: ${record['pm25Level']}'),
+                                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => DetailsScreen(record: record),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
                       ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _fetchData,
-        child: const Icon(Icons.refresh),
       ),
     );
   }
