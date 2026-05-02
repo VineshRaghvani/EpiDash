@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 void main() {
   runApp(const EpiDashApp());
@@ -53,10 +54,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _isLoading = false;
         });
       } else {
-        print('Server returned an error: ${response.statusCode}');
+        debugPrint('Server returned an error: ${response.statusCode}');
       }
     } catch (e) {
-      print('Network error: $e');
+      debugPrint('Network error: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -85,6 +86,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         title: Text(record['locationName'], style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text('AQI: ${record['airQualityIndex']} | PM2.5: ${record['pm25Level']}'),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DetailsScreen(record: record),
+                              ),
+                          );
+                        },
                       ),
                     );
                   },
@@ -92,6 +101,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _fetchData,
         child: const Icon(Icons.refresh),
+      ),
+    );
+  }
+}
+
+class DetailsScreen extends StatelessWidget {
+  final dynamic record;
+
+  const DetailsScreen({super.key, required this.record});
+
+  @override
+  Widget build(BuildContext context) {
+    // Parse the date to make it look a bit cleaner
+    DateTime parsedDate = DateTime.parse(record['recordDate']);
+    String formattedDate = '${parsedDate.year}-${parsedDate.month.toString().padLeft(2, '0')}-${parsedDate.day.toString().padLeft(2, '0')} at ${parsedDate.hour}:${parsedDate.minute.toString().padLeft(2, '0')}';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(record['locationName'], style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Current Air Quality Index', style: TextStyle(fontSize: 18, color: Colors.grey)),
+            const SizedBox(height: 8),
+            Text(
+              record['airQualityIndex'].toString(), 
+              style: const TextStyle(fontSize: 64, fontWeight: FontWeight.bold, color: Colors.teal)
+            ),
+            const Divider(height: 48, thickness: 1),
+            
+            const Text('PM 2.5 Concentration', style: TextStyle(fontSize: 18, color: Colors.grey)),
+            const SizedBox(height: 8),
+            Text(
+              '${record['pm25Level']} µg/m³', 
+              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w600)
+            ),
+            const Divider(height: 48, thickness: 1),
+
+            const Text('Last Synced', style: TextStyle(fontSize: 18, color: Colors.grey)),
+            const SizedBox(height: 8),
+            Text(
+              formattedDate, 
+              style: const TextStyle(fontSize: 20)
+            ),
+          ],
+        ),
       ),
     );
   }
