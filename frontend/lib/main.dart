@@ -41,16 +41,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchData() async {
-    // We use 10.0.2.2 so the emulator can talk to your laptop's localhost!
-    // NOTE: Make sure the port 5123 matches your C# API terminal
-    final url = Uri.parse('http://10.0.2.2:5156/api/AirQuality'); 
+    setState(() => _isLoading = true);
+    
+    // The URLs for your two endpoints
+    final syncUrl = Uri.parse('http://10.0.2.2:5156/api/AirQuality/sync'); 
+    final fetchUrl = Uri.parse('http://10.0.2.2:5156/api/AirQuality'); 
     
     try {
-      final response = await http.get(url);
+      // 1. Trigger the C# backend to pull live data from Open-Meteo
+      await http.post(syncUrl);
+
+      // 2. Fetch the newly updated database list
+      final response = await http.get(fetchUrl);
 
       if (response.statusCode == 200) {
         setState(() {
+          // Decode the data and reverse it so the newest syncs appear at the top!
           _airQualityRecords = json.decode(response.body);
+          _airQualityRecords = _airQualityRecords.reversed.toList();
           _isLoading = false;
         });
       } else {
